@@ -162,6 +162,56 @@ class SaasToMCP:
                     "status": "failed",
                     "error": str(e)
                 }
+
+        @self.mcp.tool()
+        async def run_api_tool(tool_name: str, tool_params: Dict[str, Any], ctx: Context) -> Any:
+            """
+            Execute a registered API tool with the given parameters.
+
+            Args:
+                tool_name: The name of the tool to execute.
+                tool_params: A dictionary of parameters to pass to the tool.
+                ctx: The current context.
+
+            Returns:
+                The result of the tool execution.
+
+            Raises:
+                ValueError: If the tool is not found or is a restricted core tool.
+            """
+            registered_tools = self.mcp.tools
+            
+            # Exclude core tools from being run by this function to prevent misuse/recursion
+            # Note: This list of core_tools is defined within run_api_tool itself,
+            # so it doesn't prevent run_api_tool from being listed by list_tools,
+            # but it prevents it from executing itself or other core management tools.
+            core_tools_for_execution_check = [
+                "register_api",
+                "list_apis",
+                "unregister_api",
+                "test_api_connection",
+                "run_api_tool" 
+            ]
+            
+            if tool_name not in registered_tools:
+                raise ValueError(f"Tool '{tool_name}' not found.")
+            
+            if tool_name in core_tools_for_execution_check:
+                raise ValueError(f"Core tool '{tool_name}' cannot be executed via run_api_tool.")
+                
+            tool_function = registered_tools[tool_name]["function"]
+            tool_signature = inspect.signature(tool_function)
+            
+            # Prepare parameters, including ctx if the tool expects it
+            final_params = tool_params.copy()
+            if 'ctx' in tool_signature.parameters:
+                final_params['ctx'] = ctx
+                
+            try:
+                return await self.mcp.run_tool(tool_name, **final_params)
+            except Exception as e:
+                await ctx.error(f"Error running tool {tool_name}: {str(e)}")
+                raise
     
     async def _create_http_client(self, api_config: APIConfig) -> httpx.AsyncClient:
         """Create an HTTP client with authentication configured."""

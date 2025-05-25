@@ -79,6 +79,26 @@ The server provides these built-in tools:
 2. **list_apis** - List all registered APIs and their endpoints
 3. **unregister_api** - Remove an API and its tools
 4. **test_api_connection** - Test connectivity to a registered API
+5. **run_api_tool**
+    *   **Purpose**: Executes a previously registered API endpoint tool (i.e., a tool generated from an API endpoint).
+    *   **Usage**: This tool allows direct invocation of any dynamically created API tool.
+    *   **Arguments**:
+        *   `tool_name` (string): The full name of the API tool to execute (e.g., `RegisteredAPI_endpoint_name`).
+        *   `tool_params` (object): A dictionary containing the parameters required by the target API tool.
+    *   **Restriction**: Cannot be used to execute other core management tools (like `register_api`, `list_apis`, `unregister_api`, `test_api_connection`, or `run_api_tool` itself).
+    *   **Example MCP Call (conceptual):**
+        ```json
+        {
+          "tool_name": "run_api_tool",
+          "inputs": {
+            "tool_name": "weather_get_current_weather",
+            "tool_params": {
+              "q": "Paris",
+              "units": "metric"
+            }
+          }
+        }
+        ```
 
 ### Using with AI Assistants (like Claude Desktop)
 
